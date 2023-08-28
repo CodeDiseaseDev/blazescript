@@ -27,6 +27,7 @@ val_t *eval_identifier(scope_t *scope, const ast_node_t *node);
 val_t *eval_assignment(scope_t *scope, const ast_node_t *node);
 val_t *eval_expr_call(scope_t *scope, const ast_node_t *node);
 val_t *eval_fn_decl(scope_t *scope, const ast_node_t *node);
+val_t *eval_array_lit(scope_t *scope, const ast_node_t *node);
 
 char *eval_fn_error = NULL;
 
@@ -82,6 +83,11 @@ val_t *val_create(val_type_t type)
         case VAL_FUNCTION:
             val->fnval = xcalloc(1, sizeof *(val->fnval));
             val->fnval->scope = NULL;
+            break;
+
+        case VAL_ARRAY:
+            val->array = xcalloc(1, sizeof *(val->array));
+            // val_
             break;
 
         case VAL_NULL:
@@ -147,6 +153,15 @@ val_t *val_copy_deep(val_t *orig)
 
             break;
 
+        case VAL_ARRAY:
+            for (int i = 0; i < orig->array->elements.size; i++)
+            {
+                vector_push_back(
+                    &val->array->elements,
+                    val_copy_deep(orig->array->elements.data[i]));
+            }
+            break;
+
         case VAL_NULL:
             break;
 
@@ -160,6 +175,7 @@ val_t *val_copy_deep(val_t *orig)
 void val_free_force(val_t *val)
 {
     log_debug("Freeing value: %p", val);
+    // log_debug("Freeing value: %i", val->index);
     values[val->index] = NULL;
 
     switch (val->type)
@@ -200,6 +216,17 @@ void val_free_force(val_t *val)
             free(val->fnval);
             break;
 
+        case VAL_ARRAY:
+            for (size_t i = 0; i < val->array->elements.size; i++)
+            {
+                val_t** data = (val_t**)val->array->elements.data;
+                printf("data pointer: %p\n", data);
+                val_free(data[i]);
+            }
+            free(val->array->elements.data);
+            free(val->array);
+            break;
+
         case VAL_NULL:
             break;
 
@@ -212,6 +239,20 @@ void val_free_force(val_t *val)
 
 void val_free(val_t *val)
 {
+    bool is_found = false;
+    for (int i = 0; i < values_count; i++)
+    {
+        if (values[i] == val)
+        {
+            is_found = true;
+            values[i] = nullptr;
+            break;
+        }
+    }
+
+    if (!is_found)
+        return;
+
     if (val == NULL || val->nofree || (val->type == VAL_FUNCTION && val->fnval->type == FN_BUILT_IN))
         return;
 
@@ -249,6 +290,9 @@ val_t *eval(scope_t *scope, const ast_node_t *node)
         case NODE_FN_DECL:
             return eval_fn_decl(scope, node);
 
+        case NODE_ARRAY_LIT:
+            return eval_array_lit(scope, node);
+
         default:
             fatal_error("cannot evaluate AST: unsupported AST node");
             return NULL;
@@ -268,6 +312,24 @@ static val_t *val_copy(val_t *value)
 #define VAL_CHECK_EXIT(val) \
     if (val == NULL) \
         return NULL;
+
+val_t *eval_array_lit(scope_t *scope, const ast_node_t *node)
+{
+    val_t *arr = val_create(VAL_ARRAY);
+
+    for (size_t i = 0; i < node->array_lit->elements.size; i++)
+    {
+        vector_push_back(
+            &arr->array->elements,
+            val_copy_deep(eval(
+                scope,
+                node->array_lit->elements.data[i]
+            ))
+        );
+    }
+
+    return arr;
+}
 
 val_t *eval_fn_decl(scope_t *scope, const ast_node_t *node)
 {
@@ -451,7 +513,8 @@ val_t *eval_identifier(scope_t *scope, const ast_node_t *node)
         return NULL;
     }
 
-    return val;
+    return val_copy_deep(val);
+    // return val;
 }
 
 val_t *eval_int(scope_t *scope, const ast_node_t *node)
@@ -579,7 +642,8 @@ const char *val_type_to_str(val_type_t type)
         [VAL_FLOAT] = "FLOAT",
         [VAL_FUNCTION] = "FUNCTION",
         [VAL_NULL] = "NULL",
-        [VAL_OBJECT] = "OBJECT"
+        [VAL_OBJECT] = "OBJECT",
+        [VAL_ARRAY] = "ARRAY"
     };
 
     size_t length = sizeof (translate) / sizeof (const char *);
@@ -620,6 +684,23 @@ void print_val_internal(val_t *val, bool quote_strings)
 
         case VAL_FUNCTION:
             printf("\033[2m[Function%s]\033[0m", val->fnval->type == FN_USER_CUSTOM ? "" : " Built-in");
+            break;
+
+        case VAL_ARRAY:
+            // [2, 2, 21]
+            printf("[");
+            for (int i = 0; i < val->array->elements.size; i++)
+            {
+                print_val_internal(
+                    val->array->elements.data[i],
+                    true
+                );
+                
+                if (i != val->array->elements.size - 1) {
+                    printf(", ");
+                }
+            }
+            printf("]\n");
             break;
 
         default:

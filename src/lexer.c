@@ -53,13 +53,17 @@ static const struct char_to_token_map chartokens[] = {
     { ',', T_COMMA },
     { '{', T_BLOCK_BRACE_OPEN },
     { '}', T_BLOCK_BRACE_CLOSE },
-    { '.', T_PERIOD }
+    { '.', T_PERIOD },
+    { '[', T_SQUARE_BRACE_OPEN },
+    { ']', T_SQUARE_BRACE_CLOSE }
 };
 
 static const struct keyword keywords[] = {
     { "var", T_VAR },
     { "const", T_CONST },
     { "function", T_FUNCTION },
+    { "array", T_ARRAY },
+    { "import", T_IMPORT }
 };
 
 struct lex *lex_init(char *filename, char *buf)
@@ -277,6 +281,22 @@ static void lex_push_char_token(struct lex *lex, enum lex_token_type type)
     });
 }
 
+// void lex_skip_until(struct lex* lex, char e)
+// {
+//     char c = lex_char(lex);
+//     while (c != e) {
+//         c = lex_char_forward(lex);
+//     }
+// }
+
+// void skip_until_end(struct lex* lex)
+// {
+//     lex_skip_until(lex, '\n');
+
+//     // skip over \n
+//     lex_char_forward(lex);
+// }
+
 bool lex_analyze(struct lex *lex)
 {
     while (lex_has_value(lex))
@@ -352,7 +372,11 @@ const char *lex_token_to_str(enum lex_token_type type)
         [T_FUNCTION] = "T_FUNCTION",
         [T_BLOCK_BRACE_OPEN] = "T_BLOCK_BRACE_OPEN",
         [T_BLOCK_BRACE_CLOSE] = "T_BLOCK_BRACE_CLOSE",
-        [T_PERIOD] = "T_PERIOD"
+        [T_PERIOD] = "T_PERIOD",
+        [T_SQUARE_BRACE_OPEN] = "T_SQUARE_BRACE_OPEN",
+        [T_SQUARE_BRACE_CLOSE] = "T_SQUARE_BRACE_CLOSE",
+        [T_IMPORT] = "T_IMPORT",
+        [T_ARRAY] = "T_ARRAY"
     };
 
     size_t length = sizeof (translate) / sizeof (const char *);

@@ -19,6 +19,7 @@ typedef enum {
     VAL_OBJECT,
     VAL_NULL,
     VAL_BOOLEAN,
+    VAL_ARRAY
 } val_type_t;
 
 typedef struct {
@@ -36,6 +37,11 @@ typedef struct {
 typedef struct {
     bool value;
 } val_boolean_t;
+
+typedef struct {
+    Vector elements;
+
+} val_array_t;
 
 typedef struct {
     enum {
@@ -65,6 +71,7 @@ typedef struct value {
         val_string_t *strval;
         val_boolean_t *boolval;
         val_function_t *fnval;
+        val_array_t* array;
     };
 } val_t;
 

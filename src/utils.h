@@ -5,7 +5,11 @@
 #ifndef BLAZESCRIPT_UTILS_H
 #define BLAZESCRIPT_UTILS_H
 
+// lol
+#define nullptr (void*)0
+
 #include <stdbool.h>
+#include <stddef.h>
 #define SYNTAX_ERROR_LINE(token, filename, fmt) \
     syntax_error("\033[0m\033[1m%s\033[0m:%lu:%lu: " fmt, filename, token->line_start, token->column_start)
 
@@ -20,6 +24,7 @@
         blaze_error_exit();                                 \
     }                                                       \
     while (0)
+
 
 void fatal_error(const char *fmt, ...);
 void syntax_error(const char *fmt, ...);

@@ -13,6 +13,7 @@
 
 BUILTIN_FN(println);
 BUILTIN_FN(test);
+BUILTIN_FN(httpget);
 
 struct builtin_function
 {
@@ -23,6 +24,7 @@ struct builtin_function
 static struct builtin_function const builtin_functions[] = {
     { "println", BUILTIN_FN_REF(println) },
     { "test", BUILTIN_FN_REF(test) },
+    { "httpget", BUILTIN_FN_REF(httpget) },
 };
 
 #endif /* BLAZESCRIPT_LIB_H */

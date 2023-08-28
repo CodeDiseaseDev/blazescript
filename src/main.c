@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <curl/curl.h>
+#include <stddef.h>
 
 #include "eval.h"
 #include "file.h"
@@ -12,6 +14,7 @@
 #include "utils.h"
 #include "valmap.h"
 #include "log.h"
+#include "vector.h"
 
 #define REPL_FILENAME "<stdin>"
 

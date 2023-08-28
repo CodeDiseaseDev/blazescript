@@ -1,8 +1,9 @@
 #include "http.h"
+#include <string.h>
 
-size_t write_callback(
-    char* buf, size_t size,
-    size_t nmemb, void* up)
+size_t _http_write_callback(
+    char* contents, size_t size,
+    size_t nmemb, void* userp)
 {
     size_t total_size = size * nmemb;
     char **response_ptr = (char **)userp;
@@ -19,37 +20,45 @@ size_t write_callback(
     return total_size;
 }
 
-char* make_request()
+struct http_response http_make_request(const char* url)
 {
     CURL* curl = curl_easy_init();
-
-    const char* url = "https://discord.com/api/v9/invites";
-    char* response = NULL;
+    char* response_str = NULL;
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_str);
 
     curl_easy_setopt(
         curl, CURLOPT_WRITEFUNCTION,
-        write_callback);
+        _http_write_callback);
 
     curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
-    res = curl_easy_perform(curl);
+    auto res = curl_easy_perform(curl);
+    struct http_response http_res = {};
+
     if (res != CURLE_OK)
     {
-        fprintf(stderr, "cURL error: %s\n", curl_easy_strerror(res));
-
+        fatal_error(
+            "cURL error: %s",
+            curl_easy_strerror(res)
+        );
     }
     else
     {
-        
+        int http_code;
+        curl_easy_getinfo(
+            curl, CURLINFO_RESPONSE_CODE,
+            &http_code
+        );
 
-        // get info
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+        strcpy(http_res.body, response_str);
+        http_res.status = http_code;
+
+        free(response_str);
+        curl_easy_cleanup(curl);
     }
 
     curl_easy_cleanup(curl);
-    
-
+    return http_res;
 }
